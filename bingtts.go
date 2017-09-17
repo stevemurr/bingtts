@@ -87,6 +87,13 @@ zh-TW	Male	"Microsoft Server Speech Text to Speech Voice (zh-TW, Zhiwei, Apollo)
 
 var voices map[string][]Voice
 
+type Gender string
+
+const (
+	Male   Gender = "male"
+	Female        = "female"
+)
+
 func init() {
 	voices = map[string][]Voice{}
 	for _, line := range strings.Split(voicesStr, "\n") {
@@ -109,23 +116,24 @@ func init() {
 const (
 	bingSpeechTokenEndpoint = "https://api.cognitive.microsoft.com/sts/v1.0/issueToken"
 	bingSpeechEndpointTTS   = "https://speech.platform.bing.com/synthesize"
-
-	RIFF8Bit8kHzMonoPCM      = "riff-8khz-8bit-mono-mulaw"
-	RIFF16Bit16kHzMonoPCM    = "riff-16khz-16bit-mono-pcm"
-	RIFF16khz16kbpsMonoSiren = "riff-16khz-16kbps-mono-siren"
-
-	RAW8Bit8kHzMonoMulaw   = "raw-8khz-8bit-mono-mulaw"
-	RAW16Bit16kHzMonoMulaw = "raw-16khz-16bit-mono-pcm"
-
-	Ssml16khz16bitMonoTts = "ssml-16khz-16bit-mono-tts"
-
-	Audio16khz16kbpsMonoSiren    = "audio-16khz-16kbps-mono-siren"
-	Audio16khz128kbitrateMonoMp3 = "audio-16khz-128kbitrate-mono-mp3"
-	Audio16khz64kbitrateMonoMp3  = "audio-16khz-64kbitrate-mono-mp3"
-	Audio16khz32kbitrateMonoMp3  = "audio-16khz-32kbitrate-mono-mp3"
 )
 
-func getSSML(locale string, v Voice, gender, text string) string {
+type OutputType string
+
+const (
+	RIFF8Bit8kHzMonoPCM          OutputType = "riff-8khz-8bit-mono-mulaw"
+	RIFF16Bit16kHzMonoPCM                   = "riff-16khz-16bit-mono-pcm"
+	RIFF16khz16kbpsMonoSiren                = "riff-16khz-16kbps-mono-siren"
+	RAW8Bit8kHzMonoMulaw                    = "raw-8khz-8bit-mono-mulaw"
+	RAW16Bit16kHzMonoMulaw                  = "raw-16khz-16bit-mono-pcm"
+	Ssml16khz16bitMonoTts                   = "ssml-16khz-16bit-mono-tts"
+	Audio16khz16kbpsMonoSiren               = "audio-16khz-16kbps-mono-siren"
+	Audio16khz128kbitrateMonoMp3            = "audio-16khz-128kbitrate-mono-mp3"
+	Audio16khz64kbitrateMonoMp3             = "audio-16khz-64kbitrate-mono-mp3"
+	Audio16khz32kbitrateMonoMp3             = "audio-16khz-32kbitrate-mono-mp3"
+)
+
+func getSSML(locale string, v Voice, gender Gender, text string) string {
 	return fmt.Sprintf(`<speak version='1.0' xml:lang='%s'><voice name='%s' xml:lang='%s' xml:gender='%s'>%s</voice></speak>`,
 		locale,
 		v.Description,
@@ -135,9 +143,9 @@ func getSSML(locale string, v Voice, gender, text string) string {
 }
 
 // Synthesize --
-func Synthesize(token, text, locale, gender, outputFormat string) ([]byte, error) {
+func Synthesize(token, text, locale string, gender Gender, outputFormat OutputType) ([]byte, error) {
 	client := &http.Client{}
-	v, found := voices[fmt.Sprintf("%s %s", strings.ToLower(locale), strings.ToLower(gender))]
+	v, found := voices[fmt.Sprintf("%s %s", strings.ToLower(locale), strings.ToLower(string(gender)))]
 	if !found {
 		return nil, fmt.Errorf("No voice for %s %s", locale, gender)
 	}
@@ -150,7 +158,7 @@ func Synthesize(token, text, locale, gender, outputFormat string) ([]byte, error
 	req.Header.Add("Authorization", "Bearer "+token)
 	req.Header.Add("Content-Length", strconv.Itoa(len(token)))
 	req.Header.Add("Content-Type", "application/ssml+xml")
-	req.Header.Add("X-Microsoft-OutputFormat", outputFormat)
+	req.Header.Add("X-Microsoft-OutputFormat", string(outputFormat))
 	req.Header.Add("X-Search-AppId", "00000000000000000000000000000000")
 	req.Header.Add("X-Search-ClientID", "00000000000000000000000000000000")
 	req.Header.Add("User-Agent", "go-bing-tts")
