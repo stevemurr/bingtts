@@ -109,14 +109,20 @@ func init() {
 const (
 	bingSpeechTokenEndpoint = "https://api.cognitive.microsoft.com/sts/v1.0/issueToken"
 	bingSpeechEndpointTTS   = "https://speech.platform.bing.com/synthesize"
-	// RIFF16Bit16kHzMonoPCM --
-	RIFF16Bit16kHzMonoPCM = "riff-16khz-16bit-mono-pcm"
-	// RIFF8Bit8kHzMonoPCM --
-	RIFF8Bit8kHzMonoPCM = "riff-8khz-8bit-mono-mulaw"
-	// RAW8Bit8kHzMonoMulaw --
-	RAW8Bit8kHzMonoMulaw = "raw-8khz-8bit-mono-mulaw"
-	// RAW16Bit16kHzMonoMulaw --
+
+	RIFF8Bit8kHzMonoPCM      = "riff-8khz-8bit-mono-mulaw"
+	RIFF16Bit16kHzMonoPCM    = "riff-16khz-16bit-mono-pcm"
+	RIFF16khz16kbpsMonoSiren = "riff-16khz-16kbps-mono-siren"
+
+	RAW8Bit8kHzMonoMulaw   = "raw-8khz-8bit-mono-mulaw"
 	RAW16Bit16kHzMonoMulaw = "raw-16khz-16bit-mono-pcm"
+
+	Ssml16khz16bitMonoTts = "ssml-16khz-16bit-mono-tts"
+
+	Audio16khz16kbpsMonoSiren    = "audio-16khz-16kbps-mono-siren"
+	Audio16khz128kbitrateMonoMp3 = "audio-16khz-128kbitrate-mono-mp3"
+	Audio16khz64kbitrateMonoMp3  = "audio-16khz-64kbitrate-mono-mp3"
+	Audio16khz32kbitrateMonoMp3  = "audio-16khz-32kbitrate-mono-mp3"
 )
 
 func getSSML(locale string, v Voice, gender, text string) string {
