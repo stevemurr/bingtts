@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 )
 
 type Voice struct {
-	Locale, gender, Description string
+	locale, gender, description, voiceName string
 }
 
 var voicesStr = `ar-EG*	Female	"Microsoft Server Speech Text to Speech Voice (ar-EG, Hoda)"
@@ -86,6 +87,7 @@ zh-TW	Female	"Microsoft Server Speech Text to Speech Voice (zh-TW, HanHanRUS)"
 zh-TW	Male	"Microsoft Server Speech Text to Speech Voice (zh-TW, Zhiwei, Apollo)"`
 
 var voices map[string][]Voice
+var voiceNameRegexp = regexp.MustCompile(`\(.*?,(.*?)\)`)
 
 type Gender string
 
@@ -101,12 +103,14 @@ func init() {
 		locale := strings.Replace(parts[0], "*", "", 1)
 		gender := strings.ToLower(parts[1])
 		description := parts[2]
+		voiceName := voiceNameRegexp.FindAllStringSubmatch(description, -1)[0][1]
 
 		voiceKey := strings.ToLower(fmt.Sprintf("%s %s", locale, gender))
 		v := Voice{
-			Locale:      locale,
+			locale:      locale,
+			voiceName:   strings.TrimSpace(voiceName),
 			gender:      gender,
-			Description: strings.Trim(description, `" `),
+			description: strings.Trim(description, `" `),
 		}
 		fmt.Println(v)
 		voices[voiceKey] = append(voices[voiceKey], v)
@@ -136,20 +140,36 @@ const (
 func getSSML(locale string, v Voice, gender Gender, text string) string {
 	return fmt.Sprintf(`<speak version='1.0' xml:lang='%s'><voice name='%s' xml:lang='%s' xml:gender='%s'>%s</voice></speak>`,
 		locale,
-		v.Description,
+		v.description,
 		locale,
 		gender,
 		text)
 }
 
 // Synthesize --
-func Synthesize(token, text, locale string, gender Gender, outputFormat OutputType) ([]byte, error) {
+func Synthesize(token, text, locale string, gender Gender, voiceName string, outputFormat OutputType) ([]byte, error) {
 	client := &http.Client{}
-	v, found := voices[fmt.Sprintf("%s %s", strings.ToLower(locale), strings.ToLower(string(gender)))]
+	voices, found := voices[fmt.Sprintf("%s %s", strings.ToLower(locale), strings.ToLower(string(gender)))]
 	if !found {
 		return nil, fmt.Errorf("No voice for %s %s", locale, gender)
 	}
-	ssml := getSSML(locale, v[0], gender, text)
+
+	voiceName = strings.TrimSpace(voiceName)
+	var voice *Voice
+	var voiceNames []string
+	for _, v := range voices {
+		voiceNames = append(voiceNames, v.voiceName)
+		if strings.Contains(strings.ToLower(v.voiceName), strings.ToLower(voiceName)) {
+			voice = &v
+			break
+		}
+	}
+
+	if voice == nil {
+		return nil, fmt.Errorf("No voice for found for %s, available voice names: %s", voiceName, strings.Join(voiceNames, ", "))
+	}
+
+	ssml := getSSML(locale, voices[0], gender, text)
 	req, err := http.NewRequest("POST", bingSpeechEndpointTTS, bytes.NewBufferString(ssml))
 	if err != nil {
 		return nil, err
