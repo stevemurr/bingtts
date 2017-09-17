@@ -10,7 +10,8 @@ import (
 )
 
 type Voice struct {
-	locale, gender, description, voiceName string
+	Locale, Description, VoiceName string
+	Gender                         Gender
 }
 
 var voicesStr = `ar-EG*	Female	"Microsoft Server Speech Text to Speech Voice (ar-EG, Hoda)"
@@ -107,12 +108,11 @@ func init() {
 
 		voiceKey := strings.ToLower(fmt.Sprintf("%s %s", locale, gender))
 		v := Voice{
-			locale:      locale,
-			voiceName:   strings.TrimSpace(voiceName),
-			gender:      gender,
-			description: strings.Trim(description, `" `),
+			Locale:      locale,
+			VoiceName:   strings.TrimSpace(voiceName),
+			Gender:      Gender(gender),
+			Description: strings.Trim(description, `" `),
 		}
-		fmt.Println(v)
 		voices[voiceKey] = append(voices[voiceKey], v)
 	}
 }
@@ -140,7 +140,7 @@ const (
 func getSSML(locale string, v Voice, gender Gender, text string) string {
 	return fmt.Sprintf(`<speak version='1.0' xml:lang='%s'><voice name='%s' xml:lang='%s' xml:gender='%s'>%s</voice></speak>`,
 		locale,
-		v.description,
+		v.Description,
 		locale,
 		gender,
 		text)
@@ -158,8 +158,8 @@ func Synthesize(token, text, locale string, gender Gender, voiceName string, out
 	var voice *Voice
 	var voiceNames []string
 	for _, v := range voices {
-		voiceNames = append(voiceNames, v.voiceName)
-		if strings.Contains(strings.ToLower(v.voiceName), strings.ToLower(voiceName)) {
+		voiceNames = append(voiceNames, v.VoiceName)
+		if strings.Contains(strings.ToLower(v.VoiceName), strings.ToLower(voiceName)) {
 			voice = &v
 			break
 		}
